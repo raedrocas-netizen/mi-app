@@ -10,7 +10,7 @@ app.secret_key = "clave_secreta"
 
 # 🔌 CONEXIÓN A POSTGRES
 def get_connection():
-    return psycopg2.connect(os.environ.get("postgresql://mi_db_q80h_user:KmWSCdM3zuDa0UH8PwVaNJqOrNjEkAHx@dpg-d6vjmfvdiees73d4dt10-a.oregon-postgres.render.com/mi_db_q80h"))
+    return psycopg2.connect(os.environ.get("DATABASE_URL"))
 
 
 # 🗄️ CREAR TABLAS
