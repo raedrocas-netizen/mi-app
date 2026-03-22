@@ -41,7 +41,7 @@ def crear_bd():
     con.close()
 
 
-crear_bd()
+# crear_bd()
 
 
 # 🔐 LOGIN
@@ -133,38 +133,43 @@ def agregar():
 
 
 # 📋 LISTA
-@app.route("/lista")
-def lista():
-    if "user" not in session:
-        return redirect("/")
+@app.route("/agregar", methods=["POST"])
+def agregar():
+    codigo = request.form.get("codigo", "").strip()
+    producto = request.form.get("producto", "").strip()
+    cliente = request.form.get("cliente", "").strip()
 
-    buscar = request.args.get("buscar", "")
+    try:
+        cantidad = int(request.form.get("cantidad", 0))
+    except:
+        cantidad = 0
 
-    con = get_connection()
-    cur = con.cursor()
+    try:
+        precio = float(request.form.get("precio", 0))
+    except:
+        precio = 0
 
-    if buscar:
+    try:
+        con = get_connection()
+        cur = con.cursor()
+
         cur.execute(
-            "SELECT * FROM pedidos WHERE cliente ILIKE %s OR codigo ILIKE %s",
-            ('%' + buscar + '%', '%' + buscar + '%')
+            "INSERT INTO pedidos (codigo, producto, cliente, cantidad, precio) VALUES (%s, %s, %s, %s, %s)",
+            (codigo, producto, cliente, cantidad, precio)
         )
-    else:
-        cur.execute("SELECT * FROM pedidos")
 
-    pedidos_raw = cur.fetchall()
+        con.commit()
 
-    pedidos = []
-    total_general = 0
-    for p in pedidos_raw:
-        cantidad = p[4]
-        precio = p[5] if len(p) > 5 and p[5] is not None else 0
+    except Exception as e:
+        return f"ERROR BD: {e}"
 
-        subtotal = cantidad * precio
-        total_general += subtotal
+    finally:
+        try:
+            con.close()
+        except:
+            pass
 
-        pedidos.append(p + (subtotal,))
-    con.close()
-    return render_template("lista.html", pedidos=pedidos, total=total_general)
+    return redirect("/lista")
 
 
 # ❌ ELIMINAR
