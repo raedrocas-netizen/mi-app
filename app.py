@@ -103,24 +103,29 @@ def inicio():
 # ➕ AGREGAR
 @app.route("/agregar", methods=["POST"])
 def agregar():
-    datos = (
-        request.form["codigo"],
-        request.form["producto"],
-        request.form["cliente"],
-        request.form["cantidad"],
-        request.form["precio"]
-    )
+    try:
+        codigo = request.form.get("codigo")
+        producto = request.form.get("producto")
+        cliente = request.form.get("cliente")
 
-    con = get_connection()
-    cur = con.cursor()
-    cur.execute(
-        "INSERT INTO pedidos (codigo, producto, cliente, cantidad, precio) VALUES (%s, %s, %s, %s, %s)",
-        datos
-    )
-    con.commit()
-    con.close()
+        cantidad = int(request.form.get("cantidad", 0))
+        precio = float(request.form.get("precio", 0))
 
-    return redirect("/lista")
+        con = get_connection()
+        cur = con.cursor()
+
+        cur.execute(
+            "INSERT INTO pedidos (codigo, producto, cliente, cantidad, precio) VALUES (%s, %s, %s, %s, %s)",
+            (codigo, producto, cliente, cantidad, precio)
+        )
+
+        con.commit()
+        con.close()
+
+        return redirect("/lista")
+
+    except Exception as e:
+        return f"Error al guardar: {e}"
 
 
 # 📋 LISTA
