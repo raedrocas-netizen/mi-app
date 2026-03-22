@@ -36,6 +36,11 @@ def crear_bd():
         precio NUMERIC
     )
     """)
+    # 🔥 agregar columna si no existe
+    try:
+        cur.execute("ALTER TABLE pedidos ADD COLUMN precio NUMERIC")
+    except:
+        pass  # si ya existe no hace nada
 
     con.commit()
     con.close()
@@ -220,19 +225,6 @@ def pdf():
 
     return send_file(archivo, as_attachment=True)
 
-@app.route("/fix_db")
-def fix_db():
-    con = get_connection()
-    cur = con.cursor()
-
-    try:
-        cur.execute("ALTER TABLE pedidos ADD COLUMN precio NUMERIC")
-        con.commit()
-    except:
-        pass  # si ya existe, no pasa nada
-
-    con.close()
-    return "Base de datos actualizada"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
