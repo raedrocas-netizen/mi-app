@@ -32,7 +32,7 @@ def crear_bd():
         codigo TEXT,
         producto TEXT,
         cliente TEXT,
-        cantidad INTEGER
+        cantidad INTEGER,
         precio NUMERIC
     )
     """)
@@ -205,7 +205,7 @@ def editar(id):
 def pdf():
     con = get_connection()
     cur = con.cursor()
-    cur.execute("SELECT codigo, producto, cliente, cantidad FROM pedidos")
+    cur.execute("SELECT codigo, producto, cliente, cantidad, precio FROM pedidos")
     datos = cur.fetchall()
     con.close()
 
