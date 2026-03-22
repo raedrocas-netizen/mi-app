@@ -146,9 +146,11 @@ def lista():
 
     pedidos = []
     total_general = 0
-
     for p in pedidos_raw:
-        subtotal = p[4] * p[5]  # cantidad * precio
+        cantidad = p[4]
+        precio = p[5] if len(p) > 5 and p[5] is not None else 0
+
+        subtotal = cantidad * precio
         total_general += subtotal
 
         pedidos.append(p + (subtotal,))
