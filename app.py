@@ -1,19 +1,26 @@
 from flask import Flask, render_template, request, redirect, session, send_file
-import sqlite3
+import psycopg2
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from reportlab.platypus import SimpleDocTemplate, Table
 
 app = Flask(__name__)
 app.secret_key = "clave_secreta"
 
-# BD
+
+# 🔌 CONEXIÓN A POSTGRES
+def get_connection():
+    return psycopg2.connect(os.environ.get("DATABASE_URL"))
+
+
+# 🗄️ CREAR TABLAS
 def crear_bd():
-    con = sqlite3.connect("database.db")
+    con = get_connection()
     cur = con.cursor()
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS usuarios(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         username TEXT,
         password TEXT
     )
@@ -21,7 +28,7 @@ def crear_bd():
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS pedidos(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         codigo TEXT,
         producto TEXT,
         cliente TEXT,
@@ -32,18 +39,20 @@ def crear_bd():
     con.commit()
     con.close()
 
+
 crear_bd()
 
-# LOGIN
-@app.route("/", methods=["GET","POST"])
+
+# 🔐 LOGIN
+@app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         user = request.form["username"]
         pwd = request.form["password"]
 
-        con = sqlite3.connect("database.db")
+        con = get_connection()
         cur = con.cursor()
-        cur.execute("SELECT * FROM usuarios WHERE username=?", (user,))
+        cur.execute("SELECT * FROM usuarios WHERE username=%s", (user,))
         usuario = cur.fetchone()
         con.close()
 
@@ -53,16 +62,20 @@ def login():
 
     return render_template("login.html")
 
-# REGISTRO
-@app.route("/register", methods=["GET","POST"])
+
+# 🧾 REGISTRO
+@app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
         user = request.form["username"]
         pwd = generate_password_hash(request.form["password"])
 
-        con = sqlite3.connect("database.db")
+        con = get_connection()
         cur = con.cursor()
-        cur.execute("INSERT INTO usuarios (username,password) VALUES (?,?)", (user,pwd))
+        cur.execute(
+            "INSERT INTO usuarios (username, password) VALUES (%s, %s)",
+            (user, pwd)
+        )
         con.commit()
         con.close()
 
@@ -70,20 +83,23 @@ def register():
 
     return render_template("register.html")
 
-# LOGOUT
+
+# 🔓 LOGOUT
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
 
-# INICIO APP
+
+# 🏠 INICIO
 @app.route("/inicio")
 def inicio():
     if "user" not in session:
         return redirect("/")
     return render_template("index.html")
 
-# AGREGAR
+
+# ➕ AGREGAR
 @app.route("/agregar", methods=["POST"])
 def agregar():
     datos = (
@@ -93,27 +109,34 @@ def agregar():
         request.form["cantidad"]
     )
 
-    con = sqlite3.connect("database.db")
+    con = get_connection()
     cur = con.cursor()
-    cur.execute("INSERT INTO pedidos (codigo,producto,cliente,cantidad) VALUES (?,?,?,?)", datos)
+    cur.execute(
+        "INSERT INTO pedidos (codigo, producto, cliente, cantidad) VALUES (%s, %s, %s, %s)",
+        datos
+    )
     con.commit()
     con.close()
 
     return redirect("/lista")
 
-# LISTA
+
+# 📋 LISTA
 @app.route("/lista")
 def lista():
     if "user" not in session:
         return redirect("/")
 
-    buscar = request.args.get("buscar","")
+    buscar = request.args.get("buscar", "")
 
-    con = sqlite3.connect("database.db")
+    con = get_connection()
     cur = con.cursor()
 
     if buscar:
-        cur.execute("SELECT * FROM pedidos WHERE cliente LIKE ? OR codigo LIKE ?",('%'+buscar+'%','%'+buscar+'%'))
+        cur.execute(
+            "SELECT * FROM pedidos WHERE cliente ILIKE %s OR codigo ILIKE %s",
+            ('%' + buscar + '%', '%' + buscar + '%')
+        )
     else:
         cur.execute("SELECT * FROM pedidos")
 
@@ -126,20 +149,23 @@ def lista():
 
     return render_template("lista.html", pedidos=pedidos, total=total)
 
-# ELIMINAR
+
+# ❌ ELIMINAR
 @app.route("/eliminar/<int:id>")
 def eliminar(id):
-    con = sqlite3.connect("database.db")
+    con = get_connection()
     cur = con.cursor()
-    cur.execute("DELETE FROM pedidos WHERE id=?", (id,))
+    cur.execute("DELETE FROM pedidos WHERE id=%s", (id,))
     con.commit()
     con.close()
+
     return redirect("/lista")
 
-# EDITAR
-@app.route("/editar/<int:id>", methods=["GET","POST"])
+
+# ✏️ EDITAR
+@app.route("/editar/<int:id>", methods=["GET", "POST"])
 def editar(id):
-    con = sqlite3.connect("database.db")
+    con = get_connection()
     cur = con.cursor()
 
     if request.method == "POST":
@@ -150,32 +176,39 @@ def editar(id):
             request.form["cantidad"],
             id
         )
-        cur.execute("UPDATE pedidos SET codigo=?,producto=?,cliente=?,cantidad=? WHERE id=?", datos)
+
+        cur.execute(
+            "UPDATE pedidos SET codigo=%s, producto=%s, cliente=%s, cantidad=%s WHERE id=%s",
+            datos
+        )
         con.commit()
         con.close()
+
         return redirect("/lista")
 
-    cur.execute("SELECT * FROM pedidos WHERE id=?", (id,))
+    cur.execute("SELECT * FROM pedidos WHERE id=%s", (id,))
     p = cur.fetchone()
     con.close()
 
     return render_template("editar.html", p=p)
 
-# PDF
+
+# 📄 PDF
 @app.route("/pdf")
 def pdf():
-    con = sqlite3.connect("database.db")
+    con = get_connection()
     cur = con.cursor()
-    cur.execute("SELECT codigo,producto,cliente,cantidad FROM pedidos")
+    cur.execute("SELECT codigo, producto, cliente, cantidad FROM pedidos")
     datos = cur.fetchall()
     con.close()
 
     archivo = "pedidos.pdf"
     doc = SimpleDocTemplate(archivo)
-    tabla = Table([["Código","Producto","Cliente","Cantidad"]] + datos)
+    tabla = Table([["Código", "Producto", "Cliente", "Cantidad"]] + datos)
     doc.build([tabla])
 
     return send_file(archivo, as_attachment=True)
+
 
 if __name__ == "__main__":
     app.run()
