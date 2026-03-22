@@ -1,0 +1,22 @@
+body.light {
+    background-color: #f8f9fa;
+    color: black;
+}
+
+body.dark {
+    background-color: #121212;
+    color: white;
+}
+
+.card {
+    background-color: inherit;
+    border-radius: 15px;
+}
+
+.navbar {
+    border-radius: 0 0 15px 15px;
+}
+
+.table {
+    background-color: inherit;
+}
