@@ -33,6 +33,7 @@ def crear_bd():
         producto TEXT,
         cliente TEXT,
         cantidad INTEGER
+        precio NUMERIC
     )
     """)
 
@@ -106,13 +107,14 @@ def agregar():
         request.form["codigo"],
         request.form["producto"],
         request.form["cliente"],
-        request.form["cantidad"]
+        request.form["cantidad"],
+        request.form["precio"]
     )
 
     con = get_connection()
     cur = con.cursor()
     cur.execute(
-        "INSERT INTO pedidos (codigo, producto, cliente, cantidad) VALUES (%s, %s, %s, %s)",
+        "INSERT INTO pedidos (codigo, producto, cliente, cantidad, precio) VALUES (%s, %s, %s, %s, %s)",
         datos
     )
     con.commit()
@@ -140,14 +142,18 @@ def lista():
     else:
         cur.execute("SELECT * FROM pedidos")
 
-    pedidos = cur.fetchall()
+    pedidos_raw = cur.fetchall()
 
-    cur.execute("SELECT SUM(cantidad) FROM pedidos")
-    total = cur.fetchone()[0]
+    pedidos = []
+    total_general = 0
 
+    for p in pedidos_raw:
+        subtotal = p[4] * p[5]  # cantidad * precio
+        total_general += subtotal
+
+        pedidos.append(p + (subtotal,))
     con.close()
-
-    return render_template("lista.html", pedidos=pedidos, total=total)
+    return render_template("lista.html", pedidos=pedidos, total=total_general)
 
 
 # ❌ ELIMINAR
@@ -174,11 +180,12 @@ def editar(id):
             request.form["producto"],
             request.form["cliente"],
             request.form["cantidad"],
+            request.form["precio"],
             id
         )
 
         cur.execute(
-            "UPDATE pedidos SET codigo=%s, producto=%s, cliente=%s, cantidad=%s WHERE id=%s",
+            "UPDATE pedidos SET codigo=%s, producto=%s, cliente=%s, cantidad=%s, precio=%s WHERE id=%s",
             datos
         )
         con.commit()

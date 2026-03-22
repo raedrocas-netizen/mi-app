@@ -31,7 +31,7 @@
     <div class="card shadow p-3">
         <table class="table table-striped text-center">
             <tr>
-                <th>ID</th><th>Código</th><th>Producto</th><th>Cliente</th><th>Cantidad</th><th>Acciones</th>
+                <th>ID</th><th>Código</th><th>Producto</th><th>Cliente</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th><th>Acciones</th>
             </tr>
 
             {% for p in pedidos %}
@@ -41,6 +41,8 @@
                 <td>{{ p[2] }}</td>
                 <td>{{ p[3] }}</td>
                 <td>{{ p[4] }}</td>
+                <td>{{ p[5] }}</td>
+                <td>{{ p[6] }}</td>
                 <td>
                     <a href="/editar/{{p[0]}}" class="btn btn-warning btn-sm">✏️</a>
                     <a href="/eliminar/{{p[0]}}" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar este pedido?')">🗑️
@@ -53,7 +55,7 @@
 
     <!-- TOTAL -->
     <div class="alert alert-info mt-3 text-center">
-        Total de productos: <strong>{{ total }}</strong>
+        💰 Total General: <strong>Q {{ total }}</strong>
     </div>
 
     <!-- BOTONES -->
