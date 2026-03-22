@@ -104,12 +104,16 @@ def inicio():
 @app.route("/agregar", methods=["POST"])
 def agregar():
     try:
-        codigo = request.form.get("codigo")
-        producto = request.form.get("producto")
-        cliente = request.form.get("cliente")
+        codigo = request.form.get("codigo", "").strip()
+        producto = request.form.get("producto", "").strip()
+        cliente = request.form.get("cliente", "").strip()
 
-        cantidad = int(request.form.get("cantidad", 0))
-        precio = float(request.form.get("precio", 0))
+        cantidad = request.form.get("cantidad", "0")
+        precio = request.form.get("precio", "0")
+
+        # convertir seguros
+        cantidad = int(cantidad) if cantidad.isdigit() else 0
+        precio = float(precio) if precio.replace(".", "", 1).isdigit() else 0
 
         con = get_connection()
         cur = con.cursor()
@@ -125,7 +129,7 @@ def agregar():
         return redirect("/lista")
 
     except Exception as e:
-        return f"Error al guardar: {e}"
+        return f"ERROR REAL: {e}"
 
 
 # 📋 LISTA
