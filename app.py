@@ -180,7 +180,7 @@ def editar(id):
             request.form["producto"],
             request.form["cliente"],
             request.form["cantidad"],
-            request.form["precio"],
+            request.form.get("precio", 0),
             id
         )
 
