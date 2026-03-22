@@ -41,7 +41,7 @@ def crear_bd():
     con.close()
 
 
-# crear_bd()
+crear_bd()
 
 
 # 🔐 LOGIN
@@ -133,43 +133,31 @@ def agregar():
 
 
 # 📋 LISTA
-@app.route("/agregar", methods=["POST"])
-def agregar():
-    codigo = request.form.get("codigo", "").strip()
-    producto = request.form.get("producto", "").strip()
-    cliente = request.form.get("cliente", "").strip()
+@app.route("/lista")
+def lista():
+    if "user" not in session:
+        return redirect("/")
 
-    try:
-        cantidad = int(request.form.get("cantidad", 0))
-    except:
-        cantidad = 0
+    con = get_connection()
+    cur = con.cursor()
+    cur.execute("SELECT * FROM pedidos")
+    pedidos_raw = cur.fetchall()
 
-    try:
-        precio = float(request.form.get("precio", 0))
-    except:
-        precio = 0
+    pedidos = []
+    total_general = 0
 
-    try:
-        con = get_connection()
-        cur = con.cursor()
+    for p in pedidos_raw:
+        cantidad = p[4]
+        precio = p[5] if len(p) > 5 and p[5] is not None else 0
 
-        cur.execute(
-            "INSERT INTO pedidos (codigo, producto, cliente, cantidad, precio) VALUES (%s, %s, %s, %s, %s)",
-            (codigo, producto, cliente, cantidad, precio)
-        )
+        subtotal = cantidad * precio
+        total_general += subtotal
 
-        con.commit()
+        pedidos.append(p + (subtotal,))
 
-    except Exception as e:
-        return f"ERROR BD: {e}"
+    con.close()
 
-    finally:
-        try:
-            con.close()
-        except:
-            pass
-
-    return redirect("/lista")
+    return render_template("lista.html", pedidos=pedidos, total=total_general)
 
 
 # ❌ ELIMINAR
