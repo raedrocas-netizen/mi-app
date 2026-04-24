@@ -124,6 +124,21 @@ def inicio():
 @app.route("/agregar", methods=["POST"])
 def agregar():
     try:
+        con = get_connection()
+        cur = con.cursor()
+
+        # 🔥 CREAR TABLA AQUÍ
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS pedidos(
+            id SERIAL PRIMARY KEY,
+            codigo TEXT,
+            producto TEXT,
+            cliente TEXT,
+            cantidad INTEGER,
+            precio NUMERIC
+        )
+        """)
+
         codigo = request.form.get("codigo", "").strip()
         producto = request.form.get("producto", "").strip()
         cliente = request.form.get("cliente", "").strip()
@@ -131,12 +146,8 @@ def agregar():
         cantidad = request.form.get("cantidad", "0")
         precio = request.form.get("precio", "0")
 
-        # convertir seguros
         cantidad = int(cantidad) if cantidad.isdigit() else 0
         precio = float(precio) if precio.replace(".", "", 1).isdigit() else 0
-
-        con = get_connection()
-        cur = con.cursor()
 
         cur.execute(
             "INSERT INTO pedidos (codigo, producto, cliente, cantidad, precio) VALUES (%s, %s, %s, %s, %s)",
