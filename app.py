@@ -74,17 +74,26 @@ def login():
 def register():
     if request.method == "POST":
         try:
-            crear_bd()  # 🔥 asegura que existan tablas
+            con = get_connection()
+            cur = con.cursor()
+
+            # 🔥 CREAR TABLA AQUÍ MISMO
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios(
+                id SERIAL PRIMARY KEY,
+                username TEXT,
+                password TEXT
+            )
+            """)
 
             user = request.form["username"]
             pwd = generate_password_hash(request.form["password"])
 
-            con = get_connection()
-            cur = con.cursor()
             cur.execute(
                 "INSERT INTO usuarios (username, password) VALUES (%s, %s)",
                 (user, pwd)
             )
+
             con.commit()
             con.close()
 
