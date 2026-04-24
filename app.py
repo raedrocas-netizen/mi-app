@@ -73,19 +73,25 @@ def login():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        user = request.form["username"]
-        pwd = generate_password_hash(request.form["password"])
+        try:
+            crear_bd()  # 🔥 asegura que existan tablas
 
-        con = get_connection()
-        cur = con.cursor()
-        cur.execute(
-            "INSERT INTO usuarios (username, password) VALUES (%s, %s)",
-            (user, pwd)
-        )
-        con.commit()
-        con.close()
+            user = request.form["username"]
+            pwd = generate_password_hash(request.form["password"])
 
-        return redirect("/")
+            con = get_connection()
+            cur = con.cursor()
+            cur.execute(
+                "INSERT INTO usuarios (username, password) VALUES (%s, %s)",
+                (user, pwd)
+            )
+            con.commit()
+            con.close()
+
+            return redirect("/")
+
+        except Exception as e:
+            return f"ERROR REGISTER: {e}"
 
     return render_template("register.html")
 
