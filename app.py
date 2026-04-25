@@ -177,6 +177,9 @@ def lista():
     pedidos = []
     total_general = 0
 
+    # 🔥 diccionario para totales por cliente
+    totales_cliente = {}
+
     for p in pedidos_raw:
         cantidad = p[4]
         precio = p[5] if len(p) > 5 and p[5] is not None else 0
@@ -184,11 +187,23 @@ def lista():
         subtotal = cantidad * precio
         total_general += subtotal
 
+        # 🔥 sumar por cliente
+        cliente = p[3]
+        if cliente in totales_cliente:
+            totales_cliente[cliente] += subtotal
+        else:
+            totales_cliente[cliente] = subtotal
+
         pedidos.append(p + (subtotal,))
 
     con.close()
 
-    return render_template("lista.html", pedidos=pedidos, total=total_general)
+    return render_template(
+        "lista.html",
+        pedidos=pedidos,
+        total=total_general,
+        totales_cliente=totales_cliente
+    )
 
 
 # ❌ ELIMINAR
